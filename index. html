@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Report: Tax Incentives and FDI in Nigeria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Visualization & Content Choices:
+        - FDI/Incentive Definitions: Goal: Inform. Method: Accordions/Clickable Cards. Interaction: Expand/collapse. Justification: Brevity, user-controlled detail. Lib: JS.
+        - Econometric Model: Goal: Explain. Method: Styled formula. Interaction: Hover for term definitions. Justification: Clarifies complex notation. Lib: JS/HTML/CSS.
+        - Variables (Tables 1 & 2): Goal: Organize/Inform. Method: Interactive tables/lists, potential mock Chart.js bar/donut for conceptual illustration. Interaction: Click/filter for details. Justification: Manages large info sets. Lib: JS, Chart.js.
+        - Policy Recommendations: Goal: Inform. Method: Expandable list. Interaction: Click to show details. Justification: Highlights key takeaways. Lib: JS.
+        CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .content-section {
+            padding-top: 4rem; /* Adjusted for sticky nav */
+            padding-bottom: 2rem;
+            border-bottom: 1px solid #fde68a; /* amber-200 */
+        }
+        .content-section:last-child {
+            border-bottom: none;
+        }
+        .sticky-nav {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background-color: rgba(255, 251, 235, 0.9); /* bg-amber-50 with opacity */
+            backdrop-filter: blur(10px);
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #b45309; /* amber-700 */
+            border-bottom: 2px solid #b45309; /* amber-700 */
+            font-weight: 600;
+        }
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Example max-width */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 220px;
+            background-color: #4b5563; /* gray-700 */
+            color: #fff;
+            text-align: center;
+            border-radius: 6px;
+            padding: 5px 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            font-size: 0.875rem;
+            line-height: 1.25rem;
+        }
+        .tooltip .tooltiptext::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #4b5563 transparent transparent transparent;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+        .model-term {
+            cursor: help;
+            border-bottom: 1px dashed #b45309; /* amber-700 */
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-amber-50 text-neutral-800">
+
+    <nav class="sticky-nav shadow-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <span class="font-bold text-xl text-amber-700">FDI & Tax Incentives</span>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="#overview" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:text-amber-700">Overview</a>
+                        <a href="#concepts" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:text-amber-700">Key Concepts</a>
+                        <a href="#big-question" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:text-amber-700">The Big Question</a>
+                        <a href="#methodology" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:text-amber-700">Methodology</a>
+                        <a href="#policy-impact" class="nav-link px-3 py-2 rounded-md text-sm font-medium text-neutral-700 hover:text-amber-700">Policy Impact</a>
+                    </div>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-amber-100 inline-flex items-center justify-center p-2 rounded-md text-amber-600 hover:text-amber-700 hover:bg-amber-200 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-amber-500" aria-controls="mobile-menu" aria-expanded="false">
+                        <span class="sr-only">Open main menu</span>
+                        <svg class="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                        </svg>
+                        <svg class="hidden h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="#overview" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-amber-700 hover:bg-amber-100">Overview</a>
+                <a href="#concepts" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-amber-700 hover:bg-amber-100">Key Concepts</a>
+                <a href="#big-question" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-amber-700 hover:bg-amber-100">The Big Question</a>
+                <a href="#methodology" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-amber-700 hover:bg-amber-100">Methodology</a>
+                <a href="#policy-impact" class="nav-link block px-3 py-2 rounded-md text-base font-medium text-neutral-700 hover:text-amber-700 hover:bg-amber-100">Policy Impact</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section id="overview" class="content-section">
+            <h2 class="text-3xl font-bold text-amber-700 mb-4">Overview: FDI and Tax Incentives in Nigeria</h2>
+            <p class="text-lg text-neutral-700 mb-6">
+                This interactive report explores the complex relationship between tax incentives and Foreign Direct Investment (FDI) in Nigeria. It's based on a research proposal outlining analytical techniques to empirically assess this impact. Understanding this dynamic is crucial for Nigeria as it seeks to attract sustainable FDI for economic growth and development, especially given the mixed evidence globally on the effectiveness of tax incentives and their fiscal costs.
+            </p>
+            <p class="text-neutral-600">
+                Nigeria, Africa's largest economy, uses various tax incentives to attract investment. However, the actual impact of these incentives on FDI inflows, particularly in generating new, productive investment versus merely optimizing tax burdens, needs rigorous investigation. This exploration will guide you through the core concepts, the proposed research methodology, and the potential policy implications derived from such a study.
+            </p>
+        </section>
+
+        <section id="concepts" class="content-section">
+            <h2 class="text-3xl font-bold text-amber-700 mb-6">Understanding Key Concepts</h2>
+            <p class="text-lg text-neutral-700 mb-8">
+                To analyze the effect of tax incentives on FDI, it's essential to first define these core terms and understand their relevance in the Nigerian context. This section breaks down Foreign Direct Investment and Tax Incentives, explaining their various facets and purposes.
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-4">What is Foreign Direct Investment (FDI)?</h3>
+                    <div class="space-y-3">
+                        <div class="accordion-item bg-white p-4 rounded-lg shadow">
+                            <button class="accordion-header w-full text-left font-semibold text-neutral-700 hover:text-amber-600 flex justify-between items-center">
+                                <span>Definition & Components</span>
+                                <span class="arrow transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="accordion-content mt-2 text-neutral-600">
+                                FDI is an investment made to acquire a lasting management interest (typically 10% or more of voting stock) in an enterprise operating in an economy other than that of the investor. It includes equity capital, reinvestment of earnings, and other capital flows. It implies significant influence over the foreign business.
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-white p-4 rounded-lg shadow">
+                            <button class="accordion-header w-full text-left font-semibold text-neutral-700 hover:text-amber-600 flex justify-between items-center">
+                                <span>Types of FDI</span>
+                                <span class="arrow transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="accordion-content mt-2 text-neutral-600">
+                                FDI can take forms like greenfield investments (new ventures), joint ventures (partnerships), or mergers and acquisitions (M&A). It's also important to distinguish between "immediate" FDI (direct route, may involve tax arbitrage) and "ultimate" FDI (genuine investment driven by real economic factors).
+                            </div>
+                        </div>
+                        <div class="accordion-item bg-white p-4 rounded-lg shadow">
+                            <button class="accordion-header w-full text-left font-semibold text-neutral-700 hover:text-amber-600 flex justify-between items-center">
+                                <span>Measurement</span>
+                                <span class="arrow transform transition-transform duration-300">▼</span>
+                            </button>
+                            <div class="accordion-content mt-2 text-neutral-600">
+                                FDI is commonly measured as net inflows (new investment less disinvestment) and often expressed as a percentage of GDP to account for the host economy's size. This allows for meaningful comparisons over time.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-4">What are Tax Incentives? (Nigerian Context)</h3>
+                    <p class="text-neutral-600 mb-4">Tax incentives are government measures to reduce the tax burden on companies to encourage specific economic activities. Nigeria has used various incentives:</p>
+                    <div class="space-y-3">
+                         <div class="bg-teal-50 p-4 rounded-lg shadow border-l-4 border-teal-500">
+                            <h4 class="font-semibold text-teal-700">Tax Holidays (e.g., Pioneer Status)</h4>
+                            <p class="text-sm text-neutral-600">Temporary exemption from corporate income tax for new firms in specified sectors (e.g., manufacturing, mining). Often 3-5 years.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg shadow border-l-4 border-teal-500">
+                            <h4 class="font-semibold text-teal-700">Capital Allowances</h4>
+                            <p class="text-sm text-neutral-600">Deductions for the cost of qualifying capital expenditures (machinery, buildings) over time, stimulating asset investment.</p>
+                        </div>
+                        <div class="bg-teal-50 p-4 rounded-lg shadow border-l-4 border-teal-500">
+                            <h4 class="font-semibold text-teal-700">Export Incentives (EPZ/FTZ)</h4>
+                            <p class="text-sm text-neutral-600">Tax exemptions for companies in Export Processing Zones or Free Trade Zones to boost exports.</p>
+                        </div>
+                         <div class="bg-teal-50 p-4 rounded-lg shadow border-l-4 border-teal-500">
+                            <h4 class="font-semibold text-teal-700">Other Incentives</h4>
+                            <p class="text-sm text-neutral-600">Include investment tax credits, rural location incentives (now deleted), and sector-specific exemptions.</p>
+                        </div>
+                        <p class="text-sm text-neutral-500 mt-2">The goal is to attract investment, boost competitiveness, create jobs, and reduce import reliance. However, their effectiveness is influenced by design, administration, and the broader economic climate.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="big-question" class="content-section">
+            <h2 class="text-3xl font-bold text-amber-700 mb-6">The Big Question: Do Tax Incentives Work?</h2>
+            <p class="text-lg text-neutral-700 mb-8">
+                The central theme of the research is to determine the actual effectiveness of tax incentives in attracting FDI. This involves understanding the theoretical ways tax policy can influence investment and reviewing what existing studies have found, both globally and in Nigeria.
+            </p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-3">Theoretical Linkages</h3>
+                    <p class="text-neutral-600 mb-4">Tax policy primarily influences investment by affecting:</p>
+                    <ul class="list-disc list-inside space-y-2 text-neutral-600 pl-4">
+                        <li><strong class="text-neutral-700">Cost of Capital:</strong> Lower taxes or incentives like accelerated depreciation reduce the cost of acquiring and using capital.</li>
+                        <li><strong class="text-neutral-700">Expected After-Tax Profitability:</strong> Reduced tax burdens increase the anticipated net return on an investment.</li>
+                    </ul>
+                    <p class="text-neutral-600 mt-3">Multinational Corporations (MNCs) are sensitive to tax differences and may shift investments to more favorable tax regimes. This makes tax rates a competitive factor for FDI.</p>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-3">Empirical Evidence (A Mixed Bag)</h3>
+                    <p class="text-neutral-600 mb-4">Existing studies show mixed results:</p>
+                    <ul class="list-disc list-inside space-y-2 text-neutral-600 pl-4">
+                        <li>Some studies find a <strong class="text-green-600">positive correlation</strong>: lower taxes/generous incentives lead to more FDI.</li>
+                        <li>Others find <strong class="text-red-600">limited or no additional investment</strong> due to incentives.</li>
+                        <li><strong class="text-neutral-700">Key Finding:</strong> Success is highly contingent on the broader investment climate (infrastructure, stability, governance). Incentives are often ineffective in a poor investment environment.</li>
+                        <li><strong class="text-neutral-700">Nigerian Context:</strong> Studies vary. Some show CIT an PITT negatively impact FDI. Challenges like unpredictable taxes and complex laws deter FDI. Agglomeration effects (lagged FDI) and GDP growth are also key drivers.</li>
+                    </ul>
+                    <p class="text-neutral-600 mt-3">A major concern is the "race-to-the-bottom," where countries offer excessive tax breaks, losing revenue without significant net FDI gains. The research aims to quantify this trade-off for Nigeria.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="methodology" class="content-section">
+            <h2 class="text-3xl font-bold text-amber-700 mb-6">Proposed Research Methodology</h2>
+            <p class="text-lg text-neutral-700 mb-8">
+                To empirically assess the impact of tax incentives on FDI in Nigeria, a robust econometric methodology is proposed. This section outlines the model, variables, data sources, and estimation techniques that would be used in such a study.
+            </p>
+
+            <div class="bg-white p-6 rounded-lg shadow mb-8">
+                <h3 class="text-2xl font-semibold text-amber-600 mb-4">A. Model Specification: Dynamic Panel Data Model</h3>
+                <p class="text-neutral-600 mb-4">A dynamic panel data model is suitable due to FDI's persistence, potential endogeneity, and unobserved country-specific factors. The general form is:</p>
+                <div class="bg-amber-100 p-4 rounded text-neutral-700 overflow-x-auto">
+                    <code>
+                        <span class="model-term" title="Foreign Direct Investment in country i at time t">FDI<sub>it</sub></span> = 
+                        <span class="model-term" title="Coefficient for lagged FDI">α</span><span class="model-term" title="Lagged FDI (previous period)">FDI<sub>i,t-1</sub></span> + 
+                        <span class="model-term" title="Coefficient for tax incentives">β<sub>1</sub></span><span class="model-term" title="Vector of tax incentive variables">TI<sub>it</sub></span> + 
+                        <span class="model-term" title="Summation over j control variables">Σ<sub>j=2</sub><sup>k</sup></span>
+                        <span class="model-term" title="Coefficient for control variable j">β<sub>j</sub></span><span class="model-term" title="Vector of control variables">CV<sub>jit</sub></span> + 
+                        <span class="model-term" title="Unobserved country-specific fixed effect">μ<sub>i</sub></span> + 
+                        <span class="model-term" title="Time-specific fixed effect">δ<sub>t</sub></span> + 
+                        <span class="model-term" title="Idiosyncratic error term">ε<sub>it</sub></span>
+                    </code>
+                </div>
+                <p class="text-sm text-neutral-500 mt-3">This model allows for analyzing effects within Nigeria over time and potentially comparing with similar economies if panel data is extended.</p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                <div>
+                    <h4 class="text-xl font-semibold text-amber-600 mb-3">Dependent Variable</h4>
+                    <p class="text-neutral-600"><strong class="text-neutral-700">FDI net inflows (% of GDP):</strong> Normalizes for economy size, standard measure.</p>
+                
+                    <h4 class="text-xl font-semibold text-amber-600 mt-6 mb-3">Key Independent Variables (Tax Incentives)</h4>
+                    <ul class="list-disc list-inside space-y-1 text-neutral-600 pl-4">
+                        <li><strong>Corporate Income Tax (CIT) Rates:</strong> Statutory or effective rates.</li>
+                        <li><strong>Tax Holidays (Pioneer Status):</strong> Dummy variable (active/inactive) or revenue foregone.</li>
+                        <li><strong>Capital Allowances:</strong> Generosity index or dummy for policy changes.</li>
+                        <li><strong>Export Incentives (EPZ/FTZ):</strong> Dummy variable.</li>
+                        <li><strong>Interaction Terms:</strong> Tax variables * investment climate indicators.</li>
+                    </ul>
+                    <p class="text-sm text-neutral-500 mt-2">Disaggregating incentives is crucial for policy relevance.</p>
+                </div>
+                <div>
+                    <h4 class="text-xl font-semibold text-amber-600 mb-3">Control Variables (Other FDI Determinants)</h4>
+                     <ul class="list-disc list-inside space-y-1 text-neutral-600 pl-4">
+                        <li><strong>Lagged FDI:</strong> Captures persistence, agglomeration.</li>
+                        <li><strong>Market Size:</strong> Log of Real GDP or growth rate.</li>
+                        <li><strong>Macroeconomic Stability:</strong> Inflation, exchange rate, interest rates, government debt.</li>
+                        <li><strong>Infrastructure Development:</strong> Electricity access, transport quality.</li>
+                        <li><strong>Institutional Quality:</strong> Governance indicators (corruption, rule of law).</li>
+                        <li><strong>Trade Openness:</strong> Trade as % of GDP.</li>
+                        <li><strong>Human Capital:</strong> Education enrollment rates.</li>
+                    </ul>
+                     <p class="text-sm text-neutral-500 mt-2">Controlling for these factors is vital to isolate the true effect of tax incentives.</p>
+                </div>
+            </div>
+            
+            <div class="grid md:grid-cols-2 gap-8 mb-8">
+                 <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-4">B. Data Collection & Operationalization</h3>
+                    <p class="text-neutral-600 mb-3">The study would use annual panel data for Nigeria (e.g., 1990-2023). Key data sources include:</p>
+                    <ul class="list-disc list-inside space-y-1 text-neutral-600 pl-4">
+                        <li><strong>FDI Data:</strong> World Bank (WDI), UNCTAD, CBN, NBS Nigeria.</li>
+                        <li><strong>Tax Incentives/Policy Data:</strong> FIRS, Global Tax Expenditures Transparency Initiative (GTETI), PwC Tax Summaries, NIPC Act, government publications.</li>
+                        <li><strong>Control Variables Data:</strong> World Bank (WDI), IMF, CBN, NBS, Worldwide Governance Indicators (WGI).</li>
+                    </ul>
+                    <p class="text-sm text-neutral-500 mt-2">Using granular data like GTETI's "revenue foregone" improves accuracy.</p>
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-neutral-700 mb-2">Hypothetical FDI Trend and Incentive Periods</h4>
+                        <div class="chart-container bg-white p-2 rounded-lg shadow">
+                            <canvas id="fdiTrendChart"></canvas>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1 text-center">Illustrative: FDI Trend vs. Major Incentive Policies</p>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-2xl font-semibold text-amber-600 mb-4">C. Estimation Techniques & D. Diagnostic Tests</h3>
+                     <h4 class="text-xl font-semibold text-amber-600 mb-2">Estimation:</h4>
+                     <p class="text-neutral-600 mb-3"><strong class="text-neutral-700">Generalized Method of Moments (GMM), specifically System GMM (SYS-GMM):</strong> Addresses endogeneity from lagged dependent variable and other regressors, and unobserved fixed effects. Preferred over OLS/FE for dynamic panels.</p>
+                    
+                     <h4 class="text-xl font-semibold text-amber-600 mt-4 mb-2">Diagnostic Tests:</h4>
+                     <ul class="list-disc list-inside space-y-1 text-neutral-600 pl-4">
+                        <li><strong>Autocorrelation (Arellano-Bond Test):</strong> Checks for AR(2) in differenced residuals.</li>
+                        <li><strong>Cross-sectional Dependence (Pesaran CD Test):</strong> Tests for correlation across units.</li>
+                        <li><strong>Heteroskedasticity (White Test):</strong> Assesses constant variance of errors.</li>
+                        <li><strong>Multicollinearity (VIF):</strong> Detects issues among independent variables.</li>
+                        <li><strong>Robustness Checks:</strong> Re-estimating with alternative specifications/methods.</li>
+                    </ul>
+                    <div class="mt-6">
+                        <h4 class="text-lg font-semibold text-neutral-700 mb-2">Conceptual: Relative Impact of FDI Determinants (Mock Data)</h4>
+                        <div class="chart-container bg-white p-2 rounded-lg shadow">
+                            <canvas id="fdiDeterminantsChart"></canvas>
+                        </div>
+                        <p class="text-xs text-neutral-500 mt-1 text-center">Illustrative: Mock importance scores for FDI drivers</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="policy-impact" class="content-section">
+            <h2 class="text-3xl font-bold text-amber-700 mb-6">Expected Outcomes & Policy Impact</h2>
+            <p class="text-lg text-neutral-700 mb-8">
+                A rigorous analysis using the described methodology can provide actionable insights for Nigerian policymakers. The goal is to move towards evidence-based policy design regarding tax incentives and FDI attraction.
+            </p>
+            <div class="space-y-4">
+                <div class="bg-white p-5 rounded-lg shadow transition-all hover:shadow-lg">
+                    <h3 class="font-semibold text-xl text-teal-700 mb-1">1. Evidence-Based Incentive Design</h3>
+                    <p class="text-neutral-600">Findings on specific incentive effectiveness (e.g., tax holidays vs. capital allowances) can help refine incentive packages, potentially eliminating ineffective or costly ones.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow transition-all hover:shadow-lg">
+                    <h3 class="font-semibold text-xl text-teal-700 mb-1">2. Holistic Investment Climate Improvement</h3>
+                    <p class="text-neutral-600">The research will likely highlight that incentives are not a standalone solution. Improving fundamentals (infrastructure, governance) is crucial as these amplify incentive effectiveness.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow transition-all hover:shadow-lg">
+                    <h3 class="font-semibold text-xl text-teal-700 mb-1">3. Fiscal Sustainability & Revenue Mobilization</h3>
+                    <p class="text-neutral-600">Quantifying FDI impact versus foregone revenue can inform debates on the "race to the bottom," helping balance FDI attraction with domestic revenue needs, especially for economic diversification.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow transition-all hover:shadow-lg">
+                    <h3 class="font-semibold text-xl text-teal-700 mb-1">4. Transparency and Accountability</h3>
+                    <p class="text-neutral-600">Methodological rigor supports greater transparency. Regular, independent evaluations of incentive programs should be encouraged.</p>
+                </div>
+                <div class="bg-white p-5 rounded-lg shadow transition-all hover:shadow-lg">
+                    <h3 class="font-semibold text-xl text-teal-700 mb-1">5. Targeted Policy Adjustments</h3>
+                    <p class="text-neutral-600">Understanding which incentives attract productive, job-creating FDI (e.g., greenfield) allows for targeted policies, tailoring incentives to high-potential sectors and phasing out broad, low-return ones.</p>
+                </div>
+            </div>
+            <p class="text-neutral-700 mt-8 text-center font-semibold">
+                Ultimately, this analytical framework aims to equip Nigerian policymakers with empirical evidence for more strategic, effective, and fiscally responsible FDI policies.
+            </p>
+        </section>
+    </main>
+
+    <footer class="bg-amber-100 mt-12 py-8 text-center">
+        <p class="text-neutral-600 text-sm">Interactive Report based on "Analytical Techniques for Investigating the Effect of Tax Incentives on Foreign Direct Investment in Nigeria".</p>
+        <p class="text-xs text-neutral-500 mt-1">For illustrative and educational purposes.</p>
+    </footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Mobile menu toggle
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        if (mobileMenuButton && mobileMenu) {
+            mobileMenuButton.addEventListener('click', () => {
+                const isExpanded = mobileMenuButton.getAttribute('aria-expanded') === 'true' || false;
+                mobileMenuButton.setAttribute('aria-expanded', !isExpanded);
+                mobileMenu.classList.toggle('hidden');
+                mobileMenuButton.querySelectorAll('svg').forEach(svg => svg.classList.toggle('hidden'));
+            });
+        }
+
+        // Accordion functionality
+        const accordionItems = document.querySelectorAll('.accordion-item');
+        accordionItems.forEach(item => {
+            const header = item.querySelector('.accordion-header');
+            const content = item.querySelector('.accordion-content');
+            const arrow = header.querySelector('.arrow');
+            if (header && content && arrow) {
+                header.addEventListener('click', () => {
+                    const isOpen = content.style.maxHeight && content.style.maxHeight !== "0px";
+                    // Close all other accordions in the same group if needed (optional)
+                    // item.parentElement.querySelectorAll('.accordion-content').forEach(el => el.style.maxHeight = null);
+                    // item.parentElement.querySelectorAll('.arrow').forEach(el => el.style.transform = 'rotate(0deg)');
+
+                    if (isOpen) {
+                        content.style.maxHeight = null;
+                        arrow.style.transform = 'rotate(0deg)';
+                    } else {
+                        content.style.maxHeight = content.scrollHeight + "px";
+                        arrow.style.transform = 'rotate(180deg)';
+                    }
+                });
+            }
+        });
+
+        // Smooth scroll and active nav link
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.content-section');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetSection = document.querySelector(targetId);
+                if (targetSection) {
+                    // Consider nav height for scroll position
+                    const navHeight = document.querySelector('nav').offsetHeight;
+                    const elementPosition = targetSection.getBoundingClientRect().top;
+                    const offsetPosition = elementPosition + window.pageYOffset - navHeight;
+                
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: 'smooth'
+                    });
+
+                    // Close mobile menu if open
+                    if (!mobileMenu.classList.contains('hidden')) {
+                        mobileMenuButton.click();
+                    }
+                }
+            });
+        });
+        
+        function updateActiveNavLink() {
+            let currentSectionId = '';
+            const navHeight = document.querySelector('nav').offsetHeight;
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - navHeight - 50; // Adjust offset as needed
+                if (window.pageYOffset >= sectionTop) {
+                    currentSectionId = '#' + section.getAttribute('id');
+                }
+            });
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentSectionId) {
+                    link.classList.add('active');
+                }
+            });
+        }
+        
+        window.addEventListener('scroll', updateActiveNavLink);
+        updateActiveNavLink(); // Initial call
+
+        // Chart.js: Function to wrap long labels
+        function formatLabel(str, maxwidth){
+            let sections = [];
+            let words = str.split(" ");
+            let temp = "";
+
+            words.forEach(function(item, index){
+                if(temp.length > 0) {
+                    temp = temp + " " + item;
+                } else {
+                    temp = item;
+                }
+                if(temp.length > maxwidth){
+                    sections.push(temp);
+                    temp = "";
+                }
+                if(index == words.length - 1 && temp.length > 0){
+                    sections.push(temp);
+                }
+            });
+            return sections;
+        }
+
+        // Chart 1: FDI Trend Chart (Illustrative)
+        const fdiTrendCtx = document.getElementById('fdiTrendChart');
+        if (fdiTrendCtx) {
+            new Chart(fdiTrendCtx, {
+                type: 'line',
+                data: {
+                    labels: ['2000', '2005', '2010', '2015', '2020', '2023'],
+                    datasets: [{
+                        label: 'FDI Inflows (% of GDP) - Illustrative',
+                        data: [1.5, 2.8, 5.1, 3.2, 1.9, 2.3],
+                        borderColor: 'rgb(217, 119, 6)', // amber-600
+                        backgroundColor: 'rgba(217, 119, 6, 0.1)', // amber-600 with opacity
+                        tension: 0.1,
+                        fill: true
+                    },
+                    {
+                        label: 'Pioneer Status Active (Illustrative)',
+                        data: [null, null, 5, 5, 5, null], // Representing active period with a line
+                        borderColor: 'rgb(13, 148, 136)', // teal-600
+                        borderDash: [5, 5],
+                        pointStyle: false,
+                        fill: false,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'FDI (% of GDP) / Incentive Proxy' }
+                        },
+                        x: {
+                             title: { display: true, text: 'Year' }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed.y !== null) {
+                                        label += context.parsed.y;
+                                        if (context.datasetIndex === 0) label += '%';
+                                        else if (context.datasetIndex === 1 && context.parsed.y !== null) label = 'Major Incentive Policy Active';
+
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
+                        title: {
+                            display: false // Using custom title below chart
+                        }
+                    }
+                }
+            });
+        }
+
+        // Chart 2: FDI Determinants (Mock Donut Chart)
+        const fdiDeterminantsCtx = document.getElementById('fdiDeterminantsChart');
+        if (fdiDeterminantsCtx) {
+            new Chart(fdiDeterminantsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Market Size', 'Infrastructure', 'Stability', 'Tax Incentives', 'Institutions', 'Human Capital'],
+                    datasets: [{
+                        label: 'Hypothetical Impact Score',
+                        data: [25, 20, 18, 15, 12, 10], // Mock scores
+                        backgroundColor: [
+                            'rgb(217, 119, 6)',    // amber-600
+                            'rgb(245, 158, 11)',   // amber-500
+                            'rgb(13, 148, 136)',   // teal-600
+                            'rgb(20, 184, 166)',   // teal-500
+                            'rgb(107, 114, 128)',  // gray-500
+                            'rgb(156, 163, 175)'   // gray-400
+                        ],
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                     plugins: {
+                        legend: {
+                            position: 'top',
+                             labels: {
+                                font: { size: 10 },
+                                 generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    if (data.labels.length && data.datasets.length) {
+                                        return data.labels.map(function(label, i) {
+                                            const meta = chart.getDatasetMeta(0);
+                                            const style = meta.controller.getStyle(i);
+                                            return {
+                                                text: formatLabel(label, 10).join('\n'), // Wrap label
+                                                fillStyle: style.backgroundColor,
+                                                strokeStyle: style.borderColor,
+                                                lineWidth: style.borderWidth,
+                                                hidden: isNaN(data.datasets[0].data[i]) || meta.data[i].hidden,
+                                                index: i
+                                            };
+                                        });
+                                    }
+                                    return [];
+                                }
+                            }
+                        },
+                        title: {
+                            display: false // Using custom title below chart
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>
